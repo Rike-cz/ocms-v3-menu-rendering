@@ -1,0 +1,50 @@
+{% macro render_menu_item(item, reference) %}
+    {% if not item.is_hidden and reference.url %}
+        {% if not item.replace %}
+            {% set dropdown = reference.items is not empty or item.children is not empty %}
+            <li class="{{ dropdown ? 'dropdown' }} {{ item.parent_id and dropdown ? 'dropdown-submenu' }}">
+                <a class="{{ dropdown ? 'dropdown-item dropdown-toggle' : 'nav-link' }} {{ reference.isActive ? 'active' }}" href="{{ reference.url }}">{{ item.title }}</a>
+                {#- Render child items or references -#}
+                {% if reference.items %}
+                    <ul class="dropdown-menu border-top border-top-dark mt-0">
+                        {% for child in reference.items %}
+                            <li class="{{ child.items is not empty ? 'dropdown-submenu' }}">
+                                <a class="{{ child.items is not empty ? 'dropdown-item dropdown-toggle' : 'nav-link' }}" href="{{ child.url }}">{{ child.title }}</a>
+                                {% if child.items is not empty %}
+                                    <ul class="dropdown-menu">
+                                        {{ _self.render_menu_item(item, child) }}
+                                    </ul>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% elseif item.children is not empty %}
+                    <ul class="dropdown-menu border-top border-top-dark mt-0">
+                        {% for item in item.children %}
+                            {{ _self.render_menu_item(
+                                item,
+                                link(item.reference, { nesting: item.nesting })
+                            ) }}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </li>
+        {% else %}
+            {% for item in item.children %}
+                {{ _self.render_menu_item(
+                    item,
+                    link(item.reference, { nesting: item.nesting })
+                ) }}
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+{% endmacro %}
+
+{% import _self as nav %}
+
+{% for item in menu.items.toNested %}
+    {{ nav.render_menu_item(
+        item,
+        link(item.reference, { nesting: item.nesting })
+    ) }}
+{% endfor %}
